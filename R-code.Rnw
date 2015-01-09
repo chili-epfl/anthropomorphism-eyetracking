@@ -1,0 +1,219 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+
+
+\section{data}
+<<>>=
+pre<-read.csv("/Users/Ashish/Desktop/SP/Report/robotET-2014/data-version-08-12-14/Pre-P.csv")[,c(1:6,32)]
+post<-read.csv("/Users/Ashish/Desktop/SP/Report/robotET-2014/data-version-08-12-14/Post-P.csv")[,c(1,2,28)]
+
+
+fixlowHR<-read.csv("/Users/Ashish/Desktop/SP/Report/robotET-2014/data-version-08-12-14/ET/AOIFixations-LowCogHR.csv")
+fixlowHR<-fixlowHR[fixlowHR$Fixation.Start..ms.>=0 & fixlowHR$Fixation.Start..ms.<=33000 | fixlowHR$Fixation.Start..ms.>= 67000 & fixlowHR$Fixation.Start..ms.<=141000,]
+
+fixlowRH<-read.csv("/Users/Ashish/Desktop/SP/Report/robotET-2014/data-version-08-12-14/ET/AOIFixations-LowCogRH.csv")
+fixlowRH<-fixlowRH[fixlowRH$Fixation.Start..ms.>=0 & fixlowRH$Fixation.Start..ms.<=79000 | fixlowRH$Fixation.Start..ms.>= 110000 & fixlowRH$Fixation.Start..ms.<=143000,]
+
+fixhighHR<-read.csv("/Users/Ashish/Desktop/SP/Report/robotET-2014/data-version-08-12-14/ET/AOIFixations-HighCogHR.csv")
+fixhighHR<-fixhighHR[fixhighHR$Fixation.Start..ms.>=0 & fixhighHR$Fixation.Start..ms.<=33000 | fixhighHR$Fixation.Start..ms.>= 67000 & fixhighHR$Fixation.Start..ms.<=141000,]
+
+
+fixhighRH<-read.csv("/Users/Ashish/Desktop/SP/Report/robotET-2014/data-version-08-12-14/ET/AOIFixations-HighCogRH.csv")
+fixhighRH<-fixhighRH[fixhighRH$Fixation.Start..ms.>=0 & fixhighRH$Fixation.Start..ms.<=79000 | fixhighRH$Fixation.Start..ms.>= 110000 & fixhighRH$Fixation.Start..ms.<=143000,]
+
+
+fix<-rbind(fixlowHR[,1:22],fixlowRH[,1:22],fixhighHR,fixhighRH[,1:22])
+fix$condition1<-factor(ifelse(fix$Stimulus=="hl.avi" | fix$Stimulus=="hh.avi", "human","robot"))
+fix$condition2<-factor(ifelse(fix$Stimulus=="hl.avi" | fix$Stimulus=="rl.avi", "low","high"))
+
+library(plyr)
+
+fix<-arrange(fix,fix$Subject,fix$Number)
+fix<-fix[(fix$Area.of.Interest!="green toy" & fix$Area.of.Interest!="brown toy" & fix$Area.of.Interest!="speaker 1" & fix$Area.of.Interest!="speaker 2") ,]
+fix$Area.of.Interest<-ifelse(fix$Area.of.Interest=="arm 1" | fix$Area.of.Interest=="arm 2", "arm" , ifelse(fix$Area.of.Interest=="hand 1" | fix$Area.of.Interest=="hand 2" , "hand", ifelse (fix$Area.of.Interest=="leg 1" | fix$Area.of.Interest== "leg 2" , "leg",paste(fix$Area.of.Interest))))
+fix<-fix[,c(2,5,12,23,24)]
+names(fix)<-c("p_id","aoi","duration","c1","c2")
+
+
+
+
+
+
+@
+
+
+
+\section{H1}
+<<>>=
+
+#H1
+xFix1<-ddply(fix,.(p_id,aoi,c1),summarise,m=sum(duration))
+xFix1$m<-ifelse(xFix1$c1=="robot",xFix1$m/71000,xFix1$m/30000)
+anova(lm(xFix1[xFix1$aoi=="torso",]$m~xFix1[xFix1$aoi=="torso",]$c1))
+library(gplots)
+plotmeans(xFix1[xFix1$aoi=="head",]$m~xFix1[xFix1$aoi=="head",]$c1)
+
+xFix<-ddply(xFix1,.(aoi,c1),summarise,m=mean(m),s=sd(m)*1.96/6)
+library(ggplot2)
+limits<-aes(ymin=xFix$m-xFix$s,ymax=xFix$m+xFix$s)
+ggplot(xFix,aes(x=aoi,y=m,fill=c1))+geom_bar(stat="identity",position="dodge")+geom_errorbar(limits,position="dodge")+xlab("Area of Interest (AOI)")+ylab("Proportion of time spent on each AOI")
+
+
+#other biases
+tmpFix<-xFix1[xFix1$aoi=="head",]
+tmpFix<-merge(tmpFix,pre)
+
+
+#age
+cor.test(tmpFix$m,tmpFix$age)
+
+#gender
+anova(lm(tmpFix$m~tmpFix$gender))
+
+#familiarity
+anova(lm(tmpFix$m~tmpFix$familiarity))
+
+#robot owners
+anova(lm(tmpFix$m~tmpFix$ownARobo))
+
+@
+
+
+
+
+
+\section{H2}
+<<>>=
+
+
+diff<-read.csv("/Users/Ashish/Desktop/SP/Report/robotET-2014/data-version-08-12-14/gazeDifference.csv")
+cor.test(diff$difference,diff$ICA)
+ggplot(diff,aes(x=ICA,y=difference))+geom_jitter()+geom_abline(intercept = coef(lm(diff$difference~diff$ICA))[1], slope = coef(lm(diff$difference~diff$ICA))[2])+xlab("ICA (Pre Questionnaire)")+ylab("Difference in the gaze patterns")
+
+#other biases
+tmpDiff<-merge(diff,pre)
+
+#age
+cor.test(tmpDiff$difference,tmpDiff$age)
+
+#gender
+anova(lm(tmpDiff$difference~tmpDiff$gender))
+
+#familiarity
+anova(lm(tmpDiff$difference~tmpDiff$familiarity))
+
+#robot owners
+anova(lm(tmpDiff$difference~tmpDiff$ownARobo))
+
+@
+
+
+
+
+\section{H3}
+<<>>=
+xFix2<-ddply(fix[fix$c1=="robot",],.(p_id,aoi,c2),summarise,m=sum(duration)/71000)
+anova(lm(xFix2[xFix2$aoi=="torso",]$m~xFix2[xFix2$aoi=="torso",]$c2))
+plotmeans(xFix2[xFix2$aoi=="head",]$m~xFix2[xFix2$aoi=="head",]$c2)
+
+xFix<-ddply(xFix2,.(aoi,c2),summarise,m=mean(m),s=sd(m)*1.96/6)
+limits<-aes(ymin=xFix$m-xFix$s,ymax=xFix$m+xFix$s)
+ggplot(xFix,aes(x=aoi,y=m,fill=c2))+geom_bar(stat="identity",position="dodge")+geom_errorbar(limits,position="dodge")+xlab("Area of Interest (AOI)")+ylab("Proportion of time spent on each AOI")
+
+
+
+
+
+#other biases
+tmpFix<-xFix2[xFix2$aoi=="head",]
+tmpFix<-merge(tmpFix,pre)
+
+
+#age
+cor.test(tmpFix$m,tmpFix$age)
+
+#gender
+anova(lm(tmpFix$m~tmpFix$gender))
+
+#familiarity
+anova(lm(tmpFix$m~tmpFix$familiarity))
+
+#robot owners
+anova(lm(tmpFix$m~tmpFix$ownARobo))
+
+
+@
+
+
+
+
+\section{H4}
+<<>>=
+
+#H4
+tests<-merge(pre,post,by="p_id")
+tests$diff<-tests$AAP-tests$ICA
+anova(lm(tests$diff~tests$cond))
+plotmeans(tests$diff~tests$cond,xlab="Cognitive condition (High vs. Low)",ylab="Difference between Anthropomorphic scales from Post and Pre Questionnaires")
+anova(lm(tests$manipulation~tests$cond))
+plotmeans(tests$manipulation~tests$cond,xlab="Cognitive condition (High vs. Low)",ylab="Manipulation Check")
+
+
+
+anova(lm(tests$AAP~tests$manipulation))
+plotmeans(tests$AAP~tests$manipulation)
+anova(lm(tests$diff~tests$manipulation))
+plotmeans(tests$diff~tests$manipulation)
+
+
+
+
+#other biases
+
+#gender
+anova(lm(tests$ICA~tests$gender))
+#familiarity
+anova(lm(tests$ICA~tests$familiarity))
+#manipulation check
+anova(lm(tests$ICA~tests$manipulation))
+# own a  robot
+anova(lm(tests$ICA~tests$ownARobo))
+#age
+cor.test(tests$ICA,tests$age)
+
+
+#other biases
+
+#gender
+anova(lm(tests$AAP~tests$gender))
+#familiarity
+anova(lm(tests$AAP~tests$familiarity))
+#manipulation check
+anova(lm(tests$AAP~tests$manipulation))
+# own a  robot
+anova(lm(tests$AAP~tests$ownARobo))
+#age
+cor.test(tests$AAP,tests$age)
+
+
+#other biases
+
+#gender
+anova(lm(tests$diff~tests$gender))
+#familiarity
+anova(lm(tests$diff~tests$familiarity))
+#manipulation check
+anova(lm(tests$diff~tests$manipulation))
+# own a  robot
+anova(lm(tests$diff~tests$ownARobo))
+#age
+cor.test(tests$diff,tests$age)
+
+
+@
+
+
+\end{document}
