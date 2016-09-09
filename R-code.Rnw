@@ -7,21 +7,24 @@
 
 \section{data}
 <<>>=
-pre<-read.csv("/Users/Ashish/Desktop/SP/Report/robotET-2014/data-version-08-12-14/Pre-P.csv")[,c(1:6,32)]
-post<-read.csv("/Users/Ashish/Desktop/SP/Report/robotET-2014/data-version-08-12-14/Post-P.csv")[,c(1,2,28)]
+
+prefix <- "/home/slemaignan/src/anthropomorphism-eyetracking"
+
+pre<-read.csv(file.path(prefix, "results/Pre-P.csv"))[,c(1:6,32)]
+post<-read.csv(file.path(prefix, "results/Post-P.csv"))[,c(1,2,28)]
 
 
-fixlowHR<-read.csv("/Users/Ashish/Desktop/SP/Report/robotET-2014/data-version-08-12-14/ET/AOIFixations-LowCogHR.csv")
+fixlowHR<-read.csv(file.path(prefix, "eyetracking raw data/AOIFixations-LowCogHR.csv"))
 fixlowHR<-fixlowHR[fixlowHR$Fixation.Start..ms.>=0 & fixlowHR$Fixation.Start..ms.<=33000 | fixlowHR$Fixation.Start..ms.>= 67000 & fixlowHR$Fixation.Start..ms.<=141000,]
 
-fixlowRH<-read.csv("/Users/Ashish/Desktop/SP/Report/robotET-2014/data-version-08-12-14/ET/AOIFixations-LowCogRH.csv")
+fixlowRH<-read.csv(file.path(prefix, "eyetracking raw data/AOIFixations-LowCogRH.csv"))
 fixlowRH<-fixlowRH[fixlowRH$Fixation.Start..ms.>=0 & fixlowRH$Fixation.Start..ms.<=79000 | fixlowRH$Fixation.Start..ms.>= 110000 & fixlowRH$Fixation.Start..ms.<=143000,]
 
-fixhighHR<-read.csv("/Users/Ashish/Desktop/SP/Report/robotET-2014/data-version-08-12-14/ET/AOIFixations-HighCogHR.csv")
+fixhighHR<-read.csv(file.path(prefix,"eyetracking raw data/AOIFixations-HighCogHR.csv"))
 fixhighHR<-fixhighHR[fixhighHR$Fixation.Start..ms.>=0 & fixhighHR$Fixation.Start..ms.<=33000 | fixhighHR$Fixation.Start..ms.>= 67000 & fixhighHR$Fixation.Start..ms.<=141000,]
 
 
-fixhighRH<-read.csv("/Users/Ashish/Desktop/SP/Report/robotET-2014/data-version-08-12-14/ET/AOIFixations-HighCogRH.csv")
+fixhighRH<-read.csv(file.path(prefix,"eyetracking raw data/AOIFixations-HighCogRH.csv"))
 fixhighRH<-fixhighRH[fixhighRH$Fixation.Start..ms.>=0 & fixhighRH$Fixation.Start..ms.<=79000 | fixhighRH$Fixation.Start..ms.>= 110000 & fixhighRH$Fixation.Start..ms.<=143000,]
 
 
@@ -89,7 +92,7 @@ anova(lm(tmpFix$m~tmpFix$ownARobo))
 <<>>=
 
 
-diff<-read.csv("/Users/Ashish/Desktop/SP/Report/robotET-2014/data-version-08-12-14/gazeDifference.csv")
+diff<-read.csv(file.path(prefix, "results/gazeDifference.csv"))
 cor.test(diff$difference,diff$ICA)
 ggplot(diff,aes(x=ICA,y=difference))+geom_jitter()+geom_abline(intercept = coef(lm(diff$difference~diff$ICA))[1], slope = coef(lm(diff$difference~diff$ICA))[2])+xlab("ICA (Pre Questionnaire)")+ylab("Difference in the gaze patterns")
 
